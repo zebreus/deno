@@ -1415,7 +1415,7 @@ impl Documents {
       if let Some(lockfile) = config_data.lockfile.as_ref() {
         let reqs = npm_reqs_by_scope.entry(Some(scope.clone())).or_default();
         let lockfile = lockfile.lock();
-        for key in lockfile.content.packages.specifiers.keys() {
+        for key in lockfile.content().specifiers.keys() {
           if let Some(key) = key.strip_prefix("npm:") {
             if let Ok(req) = PackageReq::from_str(key) {
               reqs.insert(req);

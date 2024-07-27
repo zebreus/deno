@@ -50,7 +50,7 @@ impl<'a, T> std::ops::DerefMut for Guard<'a, T> {
 
 impl CliLockfile {
   pub fn new(lockfile: Lockfile, frozen: bool) -> Self {
-    let filename = lockfile.filename.clone();
+    let filename = lockfile.filename().clone();
     Self {
       lockfile: Mutex::new(lockfile),
       filename,
@@ -73,7 +73,7 @@ impl CliLockfile {
   }
 
   pub fn overwrite(&self) -> bool {
-    self.lockfile.lock().overwrite
+    self.lockfile.lock().overwrite()
   }
 
   pub fn write_if_changed(&self) -> Result<(), AnyError> {
@@ -85,12 +85,11 @@ impl CliLockfile {
     // do an atomic write to reduce the chance of multiple deno
     // processes corrupting the file
     atomic_write_file_with_retries(
-      &lockfile.filename,
+      &lockfile.filename(),
       bytes,
       cache::CACHE_PERM,
     )
     .context("Failed writing lockfile.")?;
-    lockfile.has_content_changed = false;
     Ok(())
   }
 
@@ -152,10 +151,7 @@ impl CliLockfile {
         "{} \"--lock-write\" flag is deprecated and will be removed in Deno 2.",
         crate::colors::yellow("Warning")
       );
-      CliLockfile::new(
-        Lockfile::new_empty(filename, true),
-        flags.frozen_lockfile,
-      )
+      CliLockfile::new(Lockfile::new(filename, true), flags.frozen_lockfile)
     } else {
       Self::read_from_path(filename, flags.frozen_lockfile)?
     };
@@ -218,9 +214,9 @@ impl CliLockfile {
         Lockfile::with_lockfile_content(filename, &text, false)?,
         frozen,
       )),
-      Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(
-        CliLockfile::new(Lockfile::new_empty(filename, false), frozen),
-      ),
+      Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+        Ok(CliLockfile::new(Lockfile::new(filename, false), frozen))
+      }
       Err(err) => Err(err).with_context(|| {
         format!("Failed reading lockfile '{}'", filename.display())
       }),
@@ -231,7 +227,7 @@ impl CliLockfile {
       return Ok(());
     }
     let lockfile = self.lockfile.lock();
-    if lockfile.has_content_changed {
+    if lockfile.has_content_changed() {
       let suggested = if *super::DENO_FUTURE {
         "`deno cache --frozen=false`, `deno install --frozen=false`,"
       } else {
@@ -239,8 +235,8 @@ impl CliLockfile {
       };
 
       let contents =
-        std::fs::read_to_string(&lockfile.filename).unwrap_or_default();
-      let new_contents = lockfile.as_json_string();
+        std::fs::read_to_string(lockfile.filename()).unwrap_or_default();
+      let new_contents = lockfile.to_json();
       let diff = crate::util::diff::diff(&contents, &new_contents);
       // has an extra newline at the end
       let diff = diff.trim_end();

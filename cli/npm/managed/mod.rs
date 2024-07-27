@@ -239,7 +239,7 @@ async fn snapshot_from_lockfile(
     let lock = lockfile.lock();
     (
       deno_npm::resolution::incomplete_snapshot_from_lockfile(&lock)?,
-      lock.overwrite,
+      lock.overwrite(),
     )
   };
   let snapshot = deno_npm::resolution::snapshot_from_lockfile(

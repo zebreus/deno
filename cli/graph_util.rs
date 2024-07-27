@@ -430,7 +430,8 @@ impl ModuleGraphBuilder {
         self
           .0
           .lock()
-          .remote()
+          .content()
+          .remote
           .get(specifier.as_str())
           .map(|s| LoaderChecksum::new(s.clone()))
       }
@@ -439,7 +440,12 @@ impl ModuleGraphBuilder {
         &self,
         specifier: &deno_ast::ModuleSpecifier,
       ) -> bool {
-        self.0.lock().remote().contains_key(specifier.as_str())
+        self
+          .0
+          .lock()
+          .content()
+          .remote
+          .contains_key(specifier.as_str())
       }
 
       fn set_remote_checksum(
@@ -460,8 +466,7 @@ impl ModuleGraphBuilder {
         self
           .0
           .lock()
-          .content
-          .packages
+          .content()
           .jsr
           .get(&package_nv.to_string())
           .map(|s| LoaderChecksum::new(s.integrity.clone()))
@@ -477,7 +482,7 @@ impl ModuleGraphBuilder {
         self
           .0
           .lock()
-          .insert_package(package_nv.to_string(), checksum.into_string());
+          .insert_jsr_package(package_nv.to_string(), checksum.into_string());
       }
     }
 
@@ -550,7 +555,7 @@ impl ModuleGraphBuilder {
       // populate the information from the lockfile
       if let Some(lockfile) = &self.lockfile {
         let lockfile = lockfile.lock();
-        for (from, to) in &lockfile.content.redirects {
+        for (from, to) in &lockfile.content().redirects {
           if let Ok(from) = ModuleSpecifier::parse(from) {
             if let Ok(to) = ModuleSpecifier::parse(to) {
               if !matches!(from.scheme(), "file" | "npm" | "jsr") {
@@ -559,7 +564,7 @@ impl ModuleGraphBuilder {
             }
           }
         }
-        for (key, value) in &lockfile.content.packages.specifiers {
+        for (key, value) in &lockfile.content().specifiers {
           if let Some(key) = key
             .strip_prefix("jsr:")
             .and_then(|key| PackageReq::from_str(key).ok())

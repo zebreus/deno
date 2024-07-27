@@ -870,7 +870,7 @@ fn lock_redirects() {
     .run()
     .skip_output_check();
   let initial_lockfile_text = r#"{
-  "version": "3",
+  "version": "4",
   "redirects": {
     "http://localhost:4546/run/001_hello.js": "http://localhost:4545/run/001_hello.js"
   },
@@ -889,7 +889,7 @@ fn lock_redirects() {
 
   // now try changing where the redirect occurs in the lockfile
   temp_dir.write("deno.lock", r#"{
-  "version": "3",
+  "version": "4",
   "redirects": {
     "http://localhost:4546/run/001_hello.js": "http://localhost:4545/echo.ts"
   },

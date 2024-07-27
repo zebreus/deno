@@ -1,5 +1,6 @@
 // Copyright 2018-2024 the Deno authors. All rights reserved. MIT license.
 
+use deno_lockfile::LockfileContent;
 use test_util as util;
 use test_util::itest;
 use util::env_vars_for_npm_tests;
@@ -362,11 +363,10 @@ fn npm_module_check_then_error() {
     .run()
     .skip_output_check();
   let lockfile = temp_dir.path().join("deno.lock");
-  let mut lockfile_content =
-    lockfile.read_json::<deno_lockfile::LockfileContent>();
+  let mut lockfile_content = LockfileContent::new();
 
   // make the specifier resolve to version 1
-  lockfile_content.packages.specifiers.insert(
+  lockfile_content.specifiers.insert(
     "npm:@denotest/breaking-change-between-versions".to_string(),
     "npm:@denotest/breaking-change-between-versions@1.0.0".to_string(),
   );
@@ -381,7 +381,7 @@ fn npm_module_check_then_error() {
 
   // now update the lockfile to use version 2 instead, which should cause a
   // type checking error because the oldName no longer exists
-  lockfile_content.packages.specifiers.insert(
+  lockfile_content.specifiers.insert(
     "npm:@denotest/breaking-change-between-versions".to_string(),
     "npm:@denotest/breaking-change-between-versions@2.0.0".to_string(),
   );

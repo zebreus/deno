@@ -147,13 +147,11 @@ console.log(version);"#,
     false,
   )
   .unwrap();
-  *lockfile
-    .content
-    .packages
-    .specifiers
-    .get_mut("jsr:@denotest/no-module-graph@0.1")
-    .unwrap() = "jsr:@denotest/no-module-graph@0.1.0".to_string();
-  lockfile_path.write(lockfile.as_json_string());
+  lockfile.insert_package_specifier(
+    "jsr:@denotest/no-module-graph@0.1".into(),
+    "jsr:@denotest/no-module-graph@0.1.0".into(),
+  );
+  lockfile_path.write(lockfile.to_json());
 
   test_context
     .new_command()
@@ -265,7 +263,7 @@ console.log(version);"#,
   let pkg_name = "@denotest/no-module-graph@0.1.1";
   let original_integrity = get_lockfile_pkg_integrity(&lockfile, pkg_name);
   set_lockfile_pkg_integrity(&mut lockfile, pkg_name, "bad_integrity");
-  lockfile_path.write(lockfile.as_json_string());
+  lockfile_path.write(lockfile.to_json());
 
   let actual_integrity =
     test_context.get_jsr_package_integrity("@denotest/no-module-graph/0.1.1");
@@ -304,7 +302,7 @@ Use the --lock-write flag to regenerate the lockfile or --reload to reload the s
 
   // now update to the correct integrity
   set_lockfile_pkg_integrity(&mut lockfile, pkg_name, &original_integrity);
-  lockfile_path.write(lockfile.as_json_string());
+  lockfile_path.write(lockfile.to_json());
 
   // should pass now
   test_context
@@ -316,7 +314,7 @@ Use the --lock-write flag to regenerate the lockfile or --reload to reload the s
 
   // now update to a bad integrity again
   set_lockfile_pkg_integrity(&mut lockfile, pkg_name, "bad_integrity");
-  lockfile_path.write(lockfile.as_json_string());
+  lockfile_path.write(lockfile.to_json());
 
   // shouldn't matter because we have a vendor folder
   test_context
@@ -388,8 +386,7 @@ If you modified your global cache, run again with the --reload flag to restore i
 
 fn get_lockfile_pkg_integrity(lockfile: &Lockfile, pkg_name: &str) -> String {
   lockfile
-    .content
-    .packages
+    .content()
     .jsr
     .get(pkg_name)
     .unwrap()
@@ -402,11 +399,5 @@ fn set_lockfile_pkg_integrity(
   pkg_name: &str,
   integrity: &str,
 ) {
-  lockfile
-    .content
-    .packages
-    .jsr
-    .get_mut(pkg_name)
-    .unwrap()
-    .integrity = integrity.to_string();
+  lockfile.insert_jsr_package(pkg_name.into(), integrity.to_string())
 }

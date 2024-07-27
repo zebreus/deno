@@ -569,7 +569,7 @@ impl RedirectResolver {
   ) -> Self {
     let entries = DashMap::new();
     if let Some(lockfile) = lockfile {
-      for (source, destination) in &lockfile.lock().content.redirects {
+      for (source, destination) in &lockfile.lock().content().redirects {
         let Ok(source) = ModuleSpecifier::parse(source) else {
           continue;
         };
